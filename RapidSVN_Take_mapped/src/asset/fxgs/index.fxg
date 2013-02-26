@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Graphic version="2.0" viewHeight="400" viewWidth="550" ATE:version="1.0.0" flm:version="1.0.0" d:using="" xmlns="http://ns.adobe.com/fxg/2008" xmlns:ATE="http://ns.adobe.com/ate/2009" xmlns:d="http://ns.adobe.com/fxg/2008/dt" xmlns:flm="http://ns.adobe.com/flame/2008">
+  <Library>
+    <Definition name="Symbol_1" flm:originalName="Symbol 1">
+      <Group>
+        <Path data="M265.975 37.3 265.95 37.325 0 37.325 -0.025 37.3 -0.025 5.05Q-0.016210938 0.97929687 5.8 0.975L260.1 0.975Q265.96621 0.97929687 265.975 5.05L265.975 37.3">
+          <fill>
+            <LinearGradient>
+              <GradientEntry ratio="0" color="#06739A"/>
+              <GradientEntry ratio="1" color="#1C83C8"/>
+              <matrix>
+                <Matrix a="-0.025" b="-36.3" c="0.975" d="0" tx="153.8125" ty="40.8"/>
+              </matrix>
+            </LinearGradient>
+          </fill>
+        </Path>
+        <RichText x="71" y="8.2" paddingLeft="2" paddingRight="2" paddingTop="2" paddingBottom="2" fontFamily="Arial" whiteSpaceCollapse="preserve" locale="en_GB" width="104" height="24.1" pd:antiAlias="normal" pd:editPolicy="readSelect" pd:embedFonts="1" xmlns:pd="http://ns.adobe.com/xfl/2008/pd">
+          <content><p textAlign="center" fontFamily="Arial"><span fontFamily="Arial" fontSize="18" lineHeight="125.55556%" color="#FFFFFF">Index</span></p></content>
+        </RichText>
+      </Group>
+    </Definition>
+  </Library>
+  <Group d:type="layer" d:userLabel="Selected Items">
+    <Symbol_1 x="92.05" y="213.95"/>
+  </Group>
+  <Private>
+      <d:FontMap>
+        <d:Map fontFamily="Arial" fontStyle="normal" fontWeight="normal" postScriptName="ArialMT"/>
+      </d:FontMap>
+    </Private>
+  </Graphic>

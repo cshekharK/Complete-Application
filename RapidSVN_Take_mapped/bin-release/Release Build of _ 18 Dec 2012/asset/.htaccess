@@ -1,0 +1,3 @@
+# Don't compress images/flash
+SetEnvIfNoCase Request_URI \
+\.(?:gif|jpe?g|png|swf|flv)$ no-gzip dont-vary

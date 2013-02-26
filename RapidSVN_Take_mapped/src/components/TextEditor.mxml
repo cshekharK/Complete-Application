@@ -1,0 +1,662 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/halo"
+		 xmlns:mx2="library://ns.adobe.com/flex/mx"
+		 width="100%" height="396" name="CustomEditor">
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.application.controller.audioController;
+			
+			import fl.events.ScrollEvent;
+			
+			import flash.text.engine.FontPosture;
+			import flash.text.engine.FontWeight;
+			import flash.text.engine.TextLine;
+			
+			import flashx.textLayout.compose.TextFlowLine;
+			import flashx.textLayout.conversion.ConversionType;
+			import flashx.textLayout.conversion.TextConverter;
+			import flashx.textLayout.edit.*;
+			import flashx.textLayout.edit.ISelectionManager;
+			import flashx.textLayout.edit.SelectionFormat;
+			import flashx.textLayout.edit.SelectionManager;
+			import flashx.textLayout.elements.FlowElement;
+			import flashx.textLayout.elements.FlowGroupElement;
+			import flashx.textLayout.elements.InlineGraphicElement;
+			import flashx.textLayout.elements.LinkElement;
+			import flashx.textLayout.elements.ParagraphElement;
+			import flashx.textLayout.elements.SpanElement;
+			import flashx.textLayout.elements.TextFlow;
+			import flashx.textLayout.events.FlowElementMouseEvent;
+			import flashx.textLayout.events.ScrollEvent;
+			import flashx.textLayout.formats.TextAlign;
+			import flashx.textLayout.formats.TextDecoration;
+			import flashx.textLayout.formats.TextLayoutFormat;
+			
+			import mx.containers.ControlBar;
+			import mx.containers.HBox;
+			import mx.controls.Alert;
+			import mx.controls.ToolTip;
+			import mx.events.ColorPickerEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.managers.ToolTipManager;
+			
+			import spark.events.IndexChangeEvent;
+			import spark.events.TextOperationEvent;
+			import spark.layouts.HorizontalLayout;
+			
+			protected var oldSearchResult :int =0;
+			protected var fileRef:FileReference = new FileReference();
+			
+			protected var tt:ToolTip;
+			private var paragraphDeleted:Boolean = false;
+			
+			public static var currentCHT:int = -5;
+			public static var currentPAR:int = -5;
+			public static var currentAUDNAME:String = "NOTXT";
+			
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * Function is called when user is click on serch button inside the TextEditor.
+			 * truncate the text using substring; this gives you everything in mainTextField after your previous search results
+			 * when you select the range, you want to offset your result index w/ the characters your chopped off  
+			 */
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				var search_Str : String = searchTxt.text;
+				var truncatedText : String;
+				truncatedText = editor.text.substring(oldSearchResult);
+				
+				var search_result:int = truncatedText.search(search_Str);
+				editor.setFocus();
+				if(search_result != -1){
+					editor.selectRange(oldSearchResult+search_result,oldSearchResult+search_result+search_Str.length);
+					oldSearchResult = oldSearchResult+search_result+search_Str.length;
+				} else {
+					Alert.show('no more results');
+					oldSearchResult=0;
+				}
+			}
+		
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * Function will provide ID for chapters paragraph, currentAUDNAME,currentCHT,currentPAR.
+			 */
+			protected function editor_selectionChangeHandler(evt:FlexEvent):void {
+				currentAUDNAME = "NOTXT";
+				TextConverter
+				currentCHT = -5;
+				currentPAR = -5;
+				for(var k:int = 0; k<Main.textEditorIDS.length; k++){
+					for(var t:int = 0; t<Main.textEditorIDS[k].length; t++){
+						if(Main.textEditorIDS[k][t].x<=editor.selectionAnchorPosition && Main.textEditorIDS[k][t].y>=editor.selectionActivePosition){
+							currentPAR = t;
+							currentCHT = k;
+							break;
+						}
+					}
+				}
+				
+				if(currentPAR>=0 && Main.textEditorIDS[currentCHT] && Main.textEditorIDS[currentCHT][currentPAR] && editor.editable==false){
+					selectSpan(Main.textEditorIDS[currentCHT][currentPAR].x,Main.textEditorIDS[currentCHT][currentPAR].y-1);
+				}
+				var txtLayFmt:TextLayoutFormat = editor.getFormatOfRange(null,editor.selectionAnchorPosition,editor.selectionActivePosition);
+				fontDDL.selectedItem = txtLayFmt.fontFamily;
+				sizeDDL.selectedItem = txtLayFmt.fontSize;
+				boldBtn.selected = (txtLayFmt.fontWeight == FontWeight.BOLD);
+				italBtn.selected = (txtLayFmt.fontStyle == FontPosture.ITALIC);
+				underBtn.selected = (txtLayFmt.textDecoration == TextDecoration.UNDERLINE);
+				colorCP.selectedColor = txtLayFmt.color;
+				lineBtn.selected = txtLayFmt.lineThrough;
+				
+				switch (txtLayFmt.textAlign) {
+					case TextAlign.LEFT:
+						txtAlignBB.selectedIndex = 0;
+						break;
+					case TextAlign.CENTER:
+						txtAlignBB.selectedIndex = 1;
+						break;
+					case TextAlign.RIGHT:
+						txtAlignBB.selectedIndex = 2;
+						break;
+					case TextAlign.JUSTIFY:
+						txtAlignBB.selectedIndex = 3;
+						break;
+					default:
+						txtAlignBB.selectedIndex = -1;
+						break;
+				}
+				if(currentCHT>=0 && currentPAR>=0){
+					currentAUDNAME = "CH_"+(currentCHT+1)+"P_"+currentPAR;
+					balaRcord.enabled = true;
+					trace("sent to Audio = ",String(currentCHT+1),String(currentPAR));
+					audioController.getInstance().selectParagraph(String(currentCHT+1),String(currentPAR)); //for audio takes
+				}else{
+					currentAUDNAME = "NOTXT";
+					balaRcord.enabled = false;
+				}
+				
+				
+				updateTextField();
+				//editor.addEventListener(fl.events.ScrollEvent.SCROLL,scrolling);
+			}
+			
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * Record sound for selected paragraph and will send IDs to Audio module.
+			 */
+			protected function recordSND(event:MouseEvent):void
+			{
+				if(currentAUDNAME != "NOTXT"){
+					//Main.me.soundEditor.paragraphAndChapterID(String(currentCHT),String(currentPAR)); 
+				}
+				
+			}
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * For FOCUSING/COLOR on text that is clicked by user.
+			 */
+			private function selectSpan(i1:int, i2:int):void
+			{
+				editor.textFlow.interactionManager.setFocus();
+				editor.selectRange(i1, i2);
+				selectedParagraphColor(editor.textFlow);
+			}
+			
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * For FOCUSING/COLOR on text that is clicked by user.
+			 */
+			private function selectedParagraphColor(textFlow:TextFlow):void
+			{
+				var fSelFmt:ISelectionManager = textFlow.interactionManager;
+				fSelFmt.focusedSelectionFormat = new SelectionFormat(0x53BAFF, 1, BlendMode.NORMAL);
+				textFlow.interactionManager = fSelFmt;
+			}
+			
+			protected function boldBtn_clickHandler(evt:MouseEvent):void {
+				var txtLayFmt:TextLayoutFormat = editor.getFormatOfRange(null,
+					editor.selectionAnchorPosition,
+					editor.selectionActivePosition);
+				txtLayFmt.fontWeight = (txtLayFmt.fontWeight == FontWeight.BOLD) ? FontWeight.NORMAL : FontWeight.BOLD;
+				editor.setFormatOfRange(txtLayFmt,
+					editor.selectionAnchorPosition,
+					editor.selectionActivePosition);
+				editor.setFocus();
+			}
+			
+			protected function italBtn_clickHandler(evt:MouseEvent):void {
+				var txtLayFmt:TextLayoutFormat = editor.getFormatOfRange(null,
+					editor.selectionAnchorPosition,
+					editor.selectionActivePosition);
+				txtLayFmt.fontStyle = (txtLayFmt.fontStyle == FontPosture.ITALIC) ? FontPosture.NORMAL : FontPosture.ITALIC;
+				editor.setFormatOfRange(txtLayFmt,
+					editor.selectionAnchorPosition,
+					editor.selectionActivePosition);
+				editor.setFocus();
+			}
+			
+			protected function underBtn_clickHandler(evt:MouseEvent):void {
+				var txtLayFmt:TextLayoutFormat = editor.getFormatOfRange(null,
+					editor.selectionAnchorPosition,
+					editor.selectionActivePosition);
+				txtLayFmt.textDecoration = (txtLayFmt.fontStyle == TextDecoration.UNDERLINE) ? TextDecoration.NONE : TextDecoration.UNDERLINE;
+				editor.setFormatOfRange(txtLayFmt,
+					editor.selectionAnchorPosition,
+					editor.selectionActivePosition);
+				editor.setFocus();
+			}
+			
+			protected function colorCP_changeHandler(evt:ColorPickerEvent):void {
+				var txtLayFmt:TextLayoutFormat = editor.getFormatOfRange(null,
+					editor.selectionAnchorPosition,
+					editor.selectionActivePosition);
+				txtLayFmt.color = colorCP.selectedColor;
+				editor.setFormatOfRange(txtLayFmt,
+					editor.selectionAnchorPosition,
+					editor.selectionActivePosition);
+				editor.setFocus();
+			}
+			
+			protected function txtAlignBB_changeHandler(evt:IndexChangeEvent):void {
+				if (txtAlignBB.selectedItem) {
+					var txtLayFmt:TextLayoutFormat = editor.getFormatOfRange(null,
+						editor.selectionAnchorPosition,
+						editor.selectionActivePosition);
+					txtLayFmt.textAlign = txtAlignBB.selectedItem.value;
+					editor.setFormatOfRange(txtLayFmt,
+						editor.selectionAnchorPosition,
+						editor.selectionActivePosition);
+					editor.setFocus();
+				}
+			}
+			
+			protected function lineBtn_clickHandler(evt:MouseEvent):void {
+				var txtLayFmt:TextLayoutFormat = editor.getFormatOfRange(null,
+					editor.selectionAnchorPosition,
+					editor.selectionActivePosition);
+				txtLayFmt.lineThrough = lineBtn.selected;
+				editor.setFormatOfRange(txtLayFmt,
+					editor.selectionAnchorPosition,
+					editor.selectionActivePosition);
+				editor.setFocus();
+			}
+			
+			
+			protected function sizeDDL_changeHandler(evt:IndexChangeEvent):void {
+				var txtLayFmt:TextLayoutFormat = editor.getFormatOfRange(null,
+					editor.selectionAnchorPosition,
+					editor.selectionActivePosition);
+				txtLayFmt.fontSize = sizeDDL.selectedItem;
+				editor.setFormatOfRange(txtLayFmt,
+					editor.selectionAnchorPosition,
+					editor.selectionActivePosition);
+				editor.setFocus();
+			}
+			
+			protected function fontDDL_changeHandler(evt:IndexChangeEvent):void {
+				var txtLayFmt:TextLayoutFormat = editor.getFormatOfRange(null,
+					editor.selectionAnchorPosition,
+					editor.selectionActivePosition);
+				txtLayFmt.fontFamily = fontDDL.selectedItem;
+				editor.setFormatOfRange(txtLayFmt,
+					editor.selectionAnchorPosition,
+					editor.selectionActivePosition);
+				editor.setFocus();
+				
+			}
+			
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * Importing images in text editor from fileRef options as user select the image.
+			 */
+			protected function loadImage(evt:MouseEvent):void
+			{
+				fileRef.addEventListener(Event.SELECT, selectHandler);
+				fileRef.addEventListener(Event.COMPLETE, completeHandler);
+				
+				try {
+					var success:Boolean = fileRef.browse();
+				} catch (error:Error) {
+					trace("Unable to browse for files.");
+				}
+			}
+			
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * Calling upload.PHP file to upload images from local system to texteditor, when user click on import image function will be called.
+			 */
+			protected function selectHandler(event:Event):void {
+				
+				//http://localhost/flex/bin-debug/upload.php
+				var request:URLRequest= new URLRequest("upload.php");
+				
+				try {
+					
+					fileRef.upload(request, "as3File", false );
+				} catch (error:Error) {
+					trace("Unable to upload file.");
+				}
+			}
+			protected function completeHandler(evt:Event):void {	
+				try
+				{
+					var file:FileReference = FileReference( evt.target );
+					var fileURL:String = file.name;
+					
+					loadImageFromServer(fileURL);
+				}
+				catch (error:Error) {
+					trace("Unable to upload file.");
+				}
+			}
+			
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * Imported image size will be decided here.
+			 */
+			
+			protected function loadImageFromServer(image:*):void
+			{
+				var em:IEditManager = editor.textFlow.interactionManager as IEditManager;			
+				em.insertInlineGraphic("upload/"+image,200,200);			
+			}
+			
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * Added NOTE for selected words or paragraph.
+			 */
+			protected function addNote(evt:MouseEvent):void
+			{
+				
+				//setTimeout(cutText,5000);
+				var noteWindow:NoteTitleWindow = NoteTitleWindow(PopUpManager.createPopUp(this, NoteTitleWindow,true))
+				noteWindow.x=stage.stageWidth/2-noteWindow.width;
+				noteWindow.y=stage.stageHeight/2-noteWindow.height;
+				noteWindow.addEventListener("OK_btnClick",onAddNote);
+				editor.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown); 
+				
+			}
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * For cut text inside texteditor.
+			 */
+			private function cutText():void
+			{
+				editor.setFocus();
+				editor.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown); 
+				dispatchEvent(new KeyboardEvent(KeyboardEvent.KEY_DOWN,true,false,88,88,0,true)) 
+				
+			}
+			
+			public function onKeyDown(event:KeyboardEvent):void
+			{
+				
+				if(event.keyCode == 88)
+				{
+					//Alert.show("Esc key pressed : keyCode =" + event.keyCode + "");
+				}
+			}
+			private function insertText(str:String):void {
+				var substrPositions:int =editor.selectionActivePosition - editor.selectionAnchorPosition;
+				var oldSel1:int = (substrPositions>0)?(editor.selectionAnchorPosition):(editor.selectionActivePosition);
+				var oldSel2:int = (substrPositions<0)?(editor.selectionAnchorPosition):(editor.selectionActivePosition);
+				var preText:String = editor.text.substring(0, oldSel1);
+				var postText:String = editor.text.substring(oldSel2);
+				var newSelectRange:int = preText.length + str.length;
+				var newText:String = preText + str + postText;
+				
+				var operation:InsertOperation = new InsertOperation(editor.text, newText, editor, editor.selectionActivePosition, editor.selectionAnchorPosition, newSelectRange);
+				//undoManager.pushUndo(operation); 
+				
+				editor.text = newText;
+				editor.selectRange(newSelectRange, newSelectRange);
+				
+			}
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * For cut text inside texteditor.
+			 */
+			protected function onAddNote(evt:Event):void
+			{
+				
+				var spn:SpanElement=new SpanElement();
+				var anchorPos:int = editor.textFlow.interactionManager.anchorPosition;
+				var activePos:int = editor.textFlow.interactionManager.activePosition;
+				spn.color=0xFF668C;
+				spn.text = editor.text.substring(anchorPos, activePos)
+				
+				var linkElement:LinkElement=new LinkElement();
+				linkElement.id = String(evt.target.ti1.text);
+				linkElement.addChild(spn);
+				
+				//	Alert.show("-text--"+(evt.target.ti1.text));
+				//insertText("")
+				
+				var para:ParagraphElement=new ParagraphElement();
+				para = ParagraphElement(editor.textFlow.getChildAt(0));
+				
+				var _text:String = TextConverter.export(editor.textFlow,TextConverter.TEXT_LAYOUT_FORMAT,ConversionType.STRING_TYPE) as String;
+				insertFlowElementInTextFlowAt(editor.textFlow,editor.textFlow.interactionManager.activePosition,linkElement);
+				
+				EditManager(editor.textFlow.interactionManager).deleteText();
+				
+				editor.textFlow.linkNormalFormat = [{color:0x3CC00}];
+				editor.textFlow.flowComposer.updateAllControllers();
+				
+				//	Alert.show(""+_text);
+			}
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * Inserting paragraphs in text editor.
+			 */
+			protected function insertFlowElementInTextFlowAt(textflow:TextFlow,index:int,flowElement:FlowElement):void {
+				
+				var part2:TextFlow = textflow.splitAtPosition(index) as TextFlow;
+				var part2_firstPara:ParagraphElement = part2.getChildAt(0) as ParagraphElement;
+				var textflow_lastPara:ParagraphElement = textflow.getChildAt(textflow.numChildren - 1) as ParagraphElement;
+				
+				if (textflow.textLength == index) {
+					
+					part2_firstPara.addChildAt(0,flowElement);
+					textflow.replaceChildren(textflow.numChildren,textflow.numChildren,getFlowElementChildren(part2,0));
+					
+				}
+				else if (index < textflow.textLength) {
+					
+					textflow_lastPara.addChild(flowElement);
+					textflow_lastPara.replaceChildren( textflow_lastPara.numChildren, textflow_lastPara.numChildren, getFlowElementChildren(part2_firstPara));
+					textflow.replaceChildren(textflow.numChildren,textflow.numChildren,getFlowElementChildren(part2,1));
+					
+				}
+				
+			}
+			
+			protected function getFlowElementChildren(p:FlowGroupElement,start:int=0):Array {
+				var kids:Array = new Array();
+				for (var i:int = start; i<p.numChildren; i++) {
+					kids.push( p.getChildAt(i) );
+				}
+				return kids;
+			}
+			
+			protected function changeEditMode(evt:MouseEvent):void
+			{
+				editor.editable=editor.editable?false:true
+				editor.textFlow.addEventListener(FlowElementMouseEvent.ROLL_OVER, onRollOver);
+				editor.textFlow.addEventListener(FlowElementMouseEvent.ROLL_OUT, onRollOut);
+			}
+			
+			
+			private function onRollOver(event:FlowElementMouseEvent):void
+			{
+				if (tt)
+				{   
+					ToolTipManager.destroyToolTip(tt);
+					tt = null;
+				}
+				
+				// Get the LinkElement that triggered the alert
+				var link:LinkElement = event.flowElement as LinkElement;
+				
+				// Find out the link's position on screen
+				var linkStart:int = link.getAbsoluteStart();
+				var textFlowLine:TextFlowLine = link.getTextFlow().flowComposer.findLineAtPosition(linkStart);               
+				var lineStart:int = textFlowLine.absoluteStart;
+				var linkStartInLine:int = linkStart - lineStart;
+				var tl:TextLine = textFlowLine.getTextLine(true)
+				
+				var xx:int = 0;
+				var yy:int = 0; // y will always be 0
+				xx = stage.mouseX; 
+				yy = stage.mouseY;
+				
+				tt = ToolTipManager.createToolTip(event.flowElement.id, xx, yy , "errorTipAbove") as ToolTip;               
+				tt.y -= tt.height;
+				tt.styleName = "tooltip";
+			}
+			
+			private function onRollOut(event:FlowElementMouseEvent):void
+			{
+				if (tt)
+				{			
+					ToolTipManager.destroyToolTip(tt);
+					tt = null;
+				}
+			}
+			
+			// Added by CSK@Rapidsoftsystems...for Text change functionality.....
+			private function updateTextField():void
+			{
+				editor.addEventListener(TextOperationEvent.CHANGE,updatingDone);
+			}
+			
+			private function updatingDone(evt:TextOperationEvent):void
+			{
+				//Alert.show("CHANGED CHANGED");
+				
+			}
+			
+			
+			// R&D for New Editor.....01/14/2013..
+			
+			protected function editorTxt_creationCompleteHandler(event:FlexEvent):void
+			{
+				// TODO Auto-generated method stub
+				
+				txtEditor.toolbar.parent.removeChild(txtEditor.toolbar);
+				var hbox:HBox = new HBox();
+				hbox.percentWidth = 100;
+				hbox.setStyle('paddingLeft', 5);
+				hbox.setStyle('paddingTop', 5);
+				hbox.setStyle('paddingRight', 5);
+				hbox.setStyle('paddingBottom', 5);
+				hbox.addChild(txtEditor.toolbar);
+				txtEditor.addChildAt(hbox, 0);
+				
+				txtEditor.textArea.id = "editor";
+				
+				txtEditor.toolbar.removeChild(txtEditor.linkTextInput); 
+			}
+			
+			protected function txtEditor_clickHandler(event:MouseEvent):void
+			{
+				//bala added.. 
+				trace("bala select",txtEditor)
+				
+			}
+			
+			private function scrolling(e:Event):void{
+				trace("scrolling..")
+			}
+			
+			
+			//bala for adding para to flow modified..
+			import flashx.textLayout.elements.*;
+			
+			public function insertParagraph( textFlow:TextFlow, text:String, locationIndex:uint ):void
+			{
+				var paragraphs:Vector.<ParagraphElement> = getParagraphElements( text );
+				for ( var i:uint = 0; i < paragraphs.length; i++ )
+				{
+					textFlow.addChildAt(locationIndex + i,paragraphs[i] );
+				}
+			}
+			
+			public function getParagraphElements( text:String ):Vector.<ParagraphElement>
+			{
+				var textParagraphs:Array = text.split("\n");
+				var result:Vector.<ParagraphElement> = new Vector.<ParagraphElement>();
+				for ( var i:uint = 0; i < textParagraphs.length; i++ )
+				{
+					var p:ParagraphElement = new ParagraphElement();
+					var span:SpanElement = new SpanElement();
+					span.text = textParagraphs[i];
+					p.addChild(span);
+					result.push(p);
+				}
+				
+				return result;
+			}
+		]]>
+	</fx:Script>
+	
+	<s:TextArea id="editor" x="0" y="1" width="100%" height="100%" color="#060606" paragraphSpaceAfter="0" paragraphSpaceBefore="0" 
+				focusEnabled="false" paddingBottom="20" paddingLeft="50"
+				paddingRight="20" paddingTop="10" 
+				selectionChange="editor_selectionChangeHandler(event);" skinClass="flex.utils.spark.TextAreaLineNumbersSkin">		
+	</s:TextArea>
+	
+	<s:HGroup x="396" y="-156">
+	</s:HGroup>
+	
+	<s:ButtonBar id="txtAlignBB" x="255" y="-25" width="191" height="22" arrowKeysWrapFocus="true" enabled="{editMode.selected}"
+				 change="txtAlignBB_changeHandler(event);" chromeColor="#05CDF8"
+				 labelField="label" skinClass="components.CustomButtonBarSkin" >
+		
+		<s:dataProvider>
+			<s:ArrayList>
+				<fx:Object  label="Left" value="{TextAlign.LEFT}" icon="@Embed('asset/icons/icon_align_left.png')" />
+				<fx:Object label="Center" value="{TextAlign.CENTER}" icon="@Embed('asset/icons/icon_align_center.png')" />
+				<fx:Object  label="Right" value="{TextAlign.RIGHT}" icon="@Embed('asset/icons/icon_align_right.png')" />
+				<fx:Object  label="Justify" value="{TextAlign.JUSTIFY}" icon="@Embed('asset/icons/icon_align_justify.png')" />
+			</s:ArrayList>
+		</s:dataProvider>
+	</s:ButtonBar>
+	
+	
+	<s:DropDownList id="fontDDL" x="97" y="-25" width="150" height="22" enabled="{editMode.selected}"
+					change="fontDDL_changeHandler(event);" chromeColor="#0C8BDB" color="#FDF7F7"
+					contentBackgroundColor="#057399" rollOverColor="#0AB4F3"
+					selectionColor="#0CA5DE" skinClass="components.DropDownList">
+		<s:dataProvider>
+			<s:ArrayList source="[Arial,Verdana,Times New Roman,Trebuchet MS,Times New Roman,Verdana,Tahoma,Lucida Console,Lucida Sans Unicode]" />
+		</s:dataProvider>
+	</s:DropDownList>
+	<s:DropDownList id="sizeDDL" x="28" y="-25" width="60" height="22"
+					change="sizeDDL_changeHandler(event);" chromeColor="#0C8BDB" color="#FFFEFE"
+					contentBackgroundColor="#057399" enabled="{editMode.selected}"
+					rollOverColor="#0CB7F6" selectionColor="#0CA5DE">
+		<s:dataProvider>
+			<s:ArrayList source="[8,10,12,14,16,24,36,72]" />
+		</s:dataProvider>
+	</s:DropDownList>
+	<mx2:ColorPicker id="colorCP" x="2" y="-25" change="colorCP_changeHandler(event);" enabled="{editMode.selected}"
+					 chromeColor="#0C8BDB"/>
+	
+	<!--   Added by CSK@rapidsoft...on 24 Dec2012 for new Editor section for testing..    -->
+	<mx2:RichTextEditor id="txtEditor" visible="false" x="0" y="-35" width="100%" height="700"  click="txtEditor_clickHandler(event)"  creationComplete="editorTxt_creationCompleteHandler(event)" />    
+	
+	
+	<s:HGroup x="450" y="-25"  gap="2" enabled="{editMode.selected}">
+		
+		
+		<s:ToggleButton id="boldBtn" y="-25" width="32" height="22" label="B" chromeColor="#0C8BDB"
+						click="boldBtn_clickHandler(event);" color="#FEFDFD" fontFamily="Arial"
+						fontSize="12" fontWeight="bold" toolTip="Bold"/>
+		<s:ToggleButton id="italBtn" y="-25" width="32" height="22" label="I" chromeColor="#0C8BDB"
+						click="italBtn_clickHandler(event);" color="#FDFCFC" fontStyle="italic"
+						fontWeight="bold" toolTip="Italic"/>
+		<s:ToggleButton id="underBtn" y="-25" width="32" height="22" label="U" chromeColor="#0C8BDB"
+						click="underBtn_clickHandler(event);" color="#FDFCFC" fontWeight="bold"
+						textDecoration="underline" toolTip="Underline"/>
+		<s:ToggleButton id="lineBtn" y="-25" width="32" height="22" label="S" chromeColor="#0C8BDB"
+						click="lineBtn_clickHandler(event);" color="#FDFCFC" fontWeight="bold"
+						lineThrough="true" toolTip="Line Through"/>
+		
+		<s:TextInput id="searchTxt" color="#020202" contentBackgroundColor="#FEFCFC"/>
+		<s:Button width="22" height="22" chromeColor="#EBF2F7" click="button1_clickHandler(event)"
+				  icon="asset/icons/search.png" toolTip="Find" />
+		<s:Button width="22" height="22" chromeColor="#F1F5F8" click="loadImage(event)"
+				  icon="asset/icons/load_img.png" toolTip="Import Image" />
+		<s:Button width="22" height="22" chromeColor="#ECF3F7" click="addNote(event)"
+				  icon="asset/icons/note.png" toolTip="Note" />
+		
+	</s:HGroup>
+	<s:ToggleButton id="editMode" x="800" y="-25" width="102" height="22"
+					label="{editMode.selected?'Edit Mode':'Read Mode'}" chromeColor="#0C8BDB"
+					click="changeEditMode(event)" color="#FDFCFC" fontFamily="Arial" fontSize="12"
+					fontWeight="bold"/>
+	<s:Button id="balaRcord" x="920" y="-25"  width="90" height="22" label="RecordSND" 
+			  click="recordSND(event)" color="#FDFCFC" fontFamily="Arial" fontSize="12" enabled="false"/>
+	
+</s:Group>

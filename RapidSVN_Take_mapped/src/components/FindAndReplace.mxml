@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="406" height="186">
+	<fx:Script>
+		<![CDATA[
+			import com.application.view.TextEditor;
+			
+			import mx.controls.Alert;
+			protected var oldSearchResult :int =0;
+			
+			private var _textEditor: components.TextEditor = new components.TextEditor();
+			
+			public function replaceAndClose():void{
+				
+				this.parentApplication.textEditor.editor.text=this.parentApplication.textEditor.editor.text.replace(ti1.text, ti2.text);
+			}
+			// Added by ..CSK@Rapidsoft..on..26 Dec 2012..for "Replacing All" button modification...
+			public function replaceAllAndClose():void{
+				
+				var textFiledCount:Number = parentApplication.textEditor.editor.text.length;
+				for(var i:Number = 0;i<= textFiledCount;i++)
+				{
+					this.parentApplication.textEditor.editor.text=this.parentApplication.textEditor.editor.text.replace(ti1.text, ti2.text);	
+				}
+	//			FindAndReplaceWindow.visible = false;
+			}
+			
+			protected function closeBtn_clickHandler(event:MouseEvent):void
+			{
+				// TODO Auto-generated method stub
+				FindAndReplaceWindow.visible = false;
+			}
+			
+			private function findNextIntextArea():void{
+				
+				var search_Str : String = ti1.text;
+				matchFoundMesg.visible = false;
+				// truncate the text using substring; this gives you everything in mainTextField after your previous search results
+				var truncatedText : String;
+				truncatedText =  parentApplication.textEditor.editor.text.substring(oldSearchResult);
+				
+				var search_result:int = truncatedText.search(search_Str);
+			
+				if(search_result != -1){
+					var sartSel:int = oldSearchResult+search_Str.length+search_result;
+					var endSel:int = oldSearchResult + search_result;
+					parentApplication.textEditor.editor.selectRange(endSel,sartSel);
+					oldSearchResult = oldSearchResult+search_result+search_Str.length;
+				} else {
+				//	Alert.show('no more results');
+					oldSearchResult=0;
+					matchFoundMesg.visible = true;
+				}
+				
+				parentApplication.textEditor.editor.setFocus();
+//				Alert.show("sartSel---"+sartSel+"endSel---"+endSel+"search_result--"+search_result);
+			//	FindAndReplaceWindow.visible = false;
+				
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:Panel x="2" y="-2" width="402" height="190" id="FindAndReplaceWindow">
+		<s:Label x="28" y="-21" width="136" height="21" fontSize="14" fontWeight="bold"
+				 text="Find and Replace"/>
+		<mx:Label x="21" y="16" color="#090909" fontWeight="bold" text="Find what:"/>
+		<mx:TextInput id="ti1" x="21" y="41" width="229" color="#020202"/>
+		
+		<mx:Label x="21" y="80" color="#030303" fontWeight="bold" text="Replace with:"/>
+		<mx:TextInput id="ti2" x="23" y="109" width="226" color="#030303"/>
+		
+		<s:Button id="cancelButton" x="290" y="76" width="85" label="Replace" chromeColor="#0C87BA"
+				  click="replaceAndClose();" fontWeight="bold"/>
+		<s:Button id="cancelButton0" x="291" y="111" width="85" label="Replace All"
+				  chromeColor="#0C87BA" click="replaceAllAndClose();" fontWeight="bold"/>
+		<s:Button id="closeBtn" x="303" y="-26" label="Close" chromeColor="#DD1717"
+				  click="closeBtn_clickHandler(event)" color="#F2EBEB" fontSize="14"
+				  fontWeight="bold"/>
+		<s:Button id="FindNextBtn" x="291" y="41" width="85" label="Find Next" chromeColor="#0C87BA"
+				  click="findNextIntextArea()" focusColor="#D3DAE0" fontWeight="bold"/>
+		<s:Label x="23" y="135" width="226" id="matchFoundMesg" visible="false" color="#E61010" fontWeight="bold" text="No match found!!"/>
+		
+	</s:Panel>
+</s:Group>

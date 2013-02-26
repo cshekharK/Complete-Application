@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<fxpProperties abbreviated="false" authoringTool="Flex Builder" compiles="true" parentProject="d8e7ca92-de3e-4d03-9861-eaf25b56af63" projectUUID="d8e7ca92-de3e-4d03-9861-eaf25b56af63" pureCatalystProject="false" sdkVersion="4.5.0" uuid="6608df75-6e88-4e8c-b7fe-3b8ecb838555" version="15">
+  <projects/>
+  <src/>
+  <swc>
+    <linked location="sdkPlaceHolder" path="sdkPlaceHolder" position="0" uuid="6608df75-6e88-4e8c-b7fe-3b8ecb838555"/>
+    <linked location="C:/Users/vijay/Adobe Flash Builder 4.5/TLF/libs" path="/libs" position="1" uuid="d1bce3be-e07d-4566-8279-b5cb98d04ccf"/>
+    <linked location="C:/Users/MIRZA/Desktop/lib/AlivePDF.swc" path="/linked-swc/AlivePDF.swc" position="2" uuid="6608df75-6e88-4e8c-b7fe-3b8ecb838555"/>
+    <linked location="D:/Chandra/UpdatedSoundTool/SoundToolOLD.swc" path="/linked-swc/SoundToolOLD.swc" position="3" uuid="6608df75-6e88-4e8c-b7fe-3b8ecb838555"/>
+  </swc>
+  <misc/>
+  <theme/>
+  <mxmlFormattingPrefs groupAttributesByState="true" maxLineWidth="100" mxmlAlignAttributes="true" mxmlAttributeOrder="id,userLabel,includeIn,excludeFrom,visible,x,y,z,left,right,top,bottom,width,height,minWidth,minHeight,maxWidth,maxHeight,label" mxmlKeepAttributeValuesOrganized="true"/>
+</fxpProperties>

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<data>
+<menuitem label="File">
+		<menuitem label="Create From Text" data="1A" />
+		<menuitem label="New Empty File"  data="1B" />
+		<menuitem label="Insert From File"  data="1B" />
+		<menuitem label="MergeWithFile"
+				  data="1B" />
+		<menuitem type="separator" />
+		<menuitem label="Open.."
+				  data="1B" />
+		<menuitem label="Save As"
+				  data="1B" />
+		<menuitem label="Save As Compressed"
+				  data="1B" />
+		<menuitem label="WaveDistribution"
+				  data="save" />
+		<menuitem label="Export Mark File"
+				  data="1B" />
+		<menuitem label="ImportMarkFile"
+				  data="1B" />
+		<menuitem label="Export Pickup FlagsFile"
+				  data="1B" />
+		<menuitem label="Import Pickup Flags File"
+				  data="1B" />
+		<menuitem label="Print"
+				  data="1B" />
+		<menuitem type="separator" />
+		<menuitem label="Exit"
+				  data="exit" />
+	</menuitem>
+	<menuitem label="Edit">
+		<menuitem label="Undo" enabled="{canUndo}" />
+		<menuitem label="Redo" enabled="{canRedo}" />
+		<menuitem type="separator" />
+		<menuitem label="Cut"
+				  data="Cut" />
+		<menuitem label="Copy"
+				  data="Copy" />
+		<menuitem label="Paste"
+				  data="Paste" />
+		<menuitem type="separator" />
+		<menuitem label="Find/Replace"
+				  data="Find/Replace" />
+		<menuitem label="Find Next"
+				  data="Find Next" />
+		<menuitem type="separator" />
+		<menuitem label="Next Marked Paragraph"
+				  data="Next Marked Paragraph" />
+		<menuitem label="Next Silence Paragraph"
+				  data="Align" />
+		<menuitem label="Next Empty Paragraph"
+				  data="Align" />
+		<menuitem label="Next Pickup"
+				  data="Align" />
+				  
+<!-- Commented by CSK@Rapidsoft..18 Dec 2012.. For removing the "Edit" button issue. -->  
+				  
+<!--		<menuitem label="Next Disc Break"-->
+<!--				  data="Align" />-->
+<!--		<menuitem label="Next track Break"-->
+<!--				  data="Align" />-->
+<!--		<menuitem label="Next Short track"-->
+<!--				  data="Align" />-->
+<!--		<menuitem label="Mark Paragraph"-->
+<!--				  data="Align" />-->
+<!--		<menuitem label="Unmark Paragraph"-->
+<!--				  data="Align" />-->
+<!--		<menuitem label="Clear all marks"-->
+<!--				  data="Align" />-->
+<!--		<menuitem type="separator" />-->
+<!--		<menuitem label="Unflag Edited Paragraph"-->
+<!--				  data="Align" />-->
+<!--		<menuitem label="Flag Pickup"-->
+<!--				  data="Align" />-->
+<!--		<menuitem label="Unflag Pickup"-->
+<!--				  data="Align" />-->
+<!--		<menuitem label="Mark Clipped Paragraphs"-->
+<!--				  data="Align" />-->
+<!--		<menuitem label="Mark Chopped Paragraphs"-->
+<!--				  data="Align" />-->
+
+	</menuitem>
+	<menuitem label="View">
+
+	</menuitem>
+
+	<menuitem label="Tools">
+		<menuitem label="Silent Paragraph" />
+		<menuitem label="Merge to Selected Chapter" />
+		<menuitem label="Insert Logical Chapter" />
+		<menuitem label="Delete Chapter/Paragraph" />
+		<menuitem label="Delete Chapter Without Paragraph" />
+		<menuitem label="Insert Paragraph" />
+		<menuitem label="Insert Part" />
+		
+	</menuitem>
+
+	<menuitem label="Audio">
+		<menuitem label="Caliberate Devices" />
+		<menuitem label="Configure Import CD Devices" />
+		<menuitem label="Configure Import Wave" />
+		<menuitem type="separator" />
+		<menuitem label="Record" />
+		<menuitem label="Play" />
+		<menuitem label="Pause" />
+		<menuitem label="Stop" />
+		<menuitem type="separator"/>
+		<menuitem label="Crop Audio" />
+		<menuitem label="Export Audio" />
+		<menuitem label="Import Audio" />
+	</menuitem>
+	<menuitem label="Help">
+		<menuitem label="About Tantor Audio"
+				  data="AddParagraph" />
+		<menuitem label="Check For Updates"
+				  data="RemoveParagraph" />
+	</menuitem>
+</data>

@@ -1,0 +1,727 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application preloader="preloader.Preloader"
+			   xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx" backgroundColor="#282829"
+			   width="100%" height="100%" xmlns:asset="asset.fxgs.*" xmlns:components="components.*" creationComplete="handlerCreationComplete(event)" 
+			   addedToStage="stretchHandler()" preloaderChromeColor="0x006633"   xmlns:preloader="preloader.*">
+	
+	<fx:Style source="asset/css/menu.css"/>
+	
+	
+	<fx:Script>
+		<![CDATA[
+			import com.adobe.linguistics.spelling.SpellUI;
+			import com.application.controller.LoadTextController;
+			import com.application.controller.audioController;
+			import com.application.events.*;
+			import com.application.events.SoundEditorEvent;
+			import com.application.loaders.LoadLocalTXT;
+			import com.application.model5.ModelLocator5;
+			import com.application.util.HtmlEntities;
+			import com.application.util.StringUtilities;
+			import com.application.view.SoundEditor;
+			
+			import components.Audio_Take;
+			import components.FindAndReplace;
+			
+			import flash.desktop.Clipboard;
+			import flash.desktop.ClipboardFormats;
+			
+			import flashx.textLayout.conversion.ConversionType;
+			import flashx.textLayout.conversion.TextConverter;
+			import flashx.textLayout.edit.EditManager;
+			import flashx.textLayout.edit.ISelectionManager;
+			import flashx.textLayout.edit.SelectionFormat;
+			import flashx.textLayout.edit.SelectionManager;
+			import flashx.textLayout.elements.InlineGraphicElement;
+			import flashx.textLayout.elements.ParagraphElement;
+			import flashx.textLayout.elements.SpanElement;
+			import flashx.textLayout.elements.TextFlow;
+			import flashx.textLayout.elements.TextRange;
+			import flashx.textLayout.formats.TextAlign;
+			import flashx.textLayout.formats.TextDecoration;
+			import flashx.textLayout.formats.TextLayoutFormat;
+			import flashx.textLayout.formats.WhiteSpaceCollapse;
+			import flashx.undo.IOperation;
+			import flashx.undo.UndoManager;
+			
+			import flex.utils.spark.TextAreaLineNumbersSkin;
+			
+			import mx.collections.*;
+			import mx.controls.Alert;
+			import mx.controls.ToolTip;
+			import mx.core.FlexGlobals;
+			import mx.core.IUITextField;
+			import mx.core.mx_internal;
+			import mx.events.CloseEvent;
+			import mx.events.ColorPickerEvent;
+			import mx.events.FlexEvent;
+			import mx.events.ListEvent;
+			import mx.events.MenuEvent;
+			import mx.managers.PopUpManager;
+			import mx.managers.ToolTipManager;
+			import mx.rpc.events.ResultEvent;
+			
+			import org.alivepdf.display.Display;
+			import org.alivepdf.layout.Orientation;
+			import org.alivepdf.layout.Size;
+			import org.alivepdf.layout.Unit;
+			import org.alivepdf.pdf.PDF;
+			import org.alivepdf.saving.Method;
+			
+			import spark.components.TextArea;
+			import spark.events.IndexChangeEvent;
+			import spark.utils.TextFlowUtil;
+			
+			
+			
+			[Bindable]
+			public var menuBarCollection:XMLListCollection;
+			
+			[Bindable]
+			private var canUndo:Boolean = true;
+			[Bindable]
+			private var canRedo:Boolean = true;
+			private var _controller:LoadTextController	
+			private var leafXML:XML;
+			private var mainTextFlow:TextFlow;
+			private var editManager:EditManager;
+			private var undoManager:UndoManager;
+			public var soundEditor:SoundEditor;
+			
+			private var myPDF:PDF;
+			public var myTip:ToolTip;
+			private var fileReference:FileReference;
+			
+			private var counter:int=0;
+			private var machCount:int =0;
+			private var moreText:Boolean = false;
+			public var str:String; 
+			
+			public var importedChapteriteration:int = 1;
+			private var iii:int=0;
+			public static var textEditorIDS:Vector.<Vector.<Point>> = new Vector.<Vector.<Point>>();
+			public static var me:Main;
+			public var myXMLToSave:XML;
+			
+			
+			public var _audio_Take:Audio_Take = new Audio_Take(); // Added TAKE POPUP... by CSK...21 Feb 2013..
+		
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * Starting applciation from here.
+			 * Started Date:11 August 2012
+			 * Last Updated Date: 27 Dec 2012
+			 * 
+			 */
+			protected function handlerCreationComplete(event:FlexEvent):void
+			{
+				me = this;
+
+				undoManager = new UndoManager();
+				editManager = new EditManager(undoManager);
+				textEditor.editor.textFlow.interactionManager = editManager;
+				 
+				textEditor.editor.addEventListener(MouseEvent.CLICK,showIndex); 
+				
+				menuBarCollection = new XMLListCollection(nodes.children());
+				myTree.addEventListener(ListEvent.ITEM_CLICK, handleClick);
+				leafXML = new XML("<nodess></nodess>");    
+				soundEditor=new SoundEditor(); 
+				_controller=new LoadTextController(ModelLocator5.getInstance()); 
+				soundEditor.addEventListener(SoundEditorEvent.Sound_Error,soundEditorErrorHandler);
+				soundEditor.y=60;
+				sp.addChild(soundEditor)
+				
+				soundEditor.cutSound_mc.addEventListener(MouseEvent.ROLL_OVER,audioButtonRollOver)
+				soundEditor.cutSound_mc.addEventListener(MouseEvent.ROLL_OUT,destroyBigTip)
+				
+				soundEditor.playPause_mc.addEventListener(MouseEvent.ROLL_OVER,audioButtonRollOver)
+				soundEditor.playPause_mc.addEventListener(MouseEvent.ROLL_OUT,destroyBigTip)
+					
+				ModelLocator5.getInstance().addEventListener(ModelEvent.SHOW_AUDIO_LIST, showAudioList);
+				
+				soundEditor.saveAudio_mc.addEventListener(MouseEvent.ROLL_OVER,audioButtonRollOver)
+				soundEditor.saveAudio_mc.addEventListener(MouseEvent.ROLL_OUT,destroyBigTip)
+				
+				 soundEditor.stopPlayBack_mc.addEventListener(MouseEvent.ROLL_OVER,audioButtonRollOver)
+				soundEditor.stopPlayBack_mc.addEventListener(MouseEvent.ROLL_OUT,destroyBigTip)
+				
+				soundEditor.record_btn.addEventListener(MouseEvent.ROLL_OVER,audioButtonRollOver)
+				soundEditor.record_btn.addEventListener(MouseEvent.ROLL_OUT,destroyBigTip)
+			/*	
+				soundEditor.reset_btn.addEventListener(MouseEvent.ROLL_OVER,audioButtonRollOver)
+				soundEditor.reset_btn.addEventListener(MouseEvent.ROLL_OUT,destroyBigTip)
+				
+				soundEditor.saveRecord_btn.addEventListener(MouseEvent.ROLL_OVER,audioButtonRollOver)
+				soundEditor.saveRecord_btn.addEventListener(MouseEvent.ROLL_OUT,destroyBigTip)
+
+			 	
+			 	var my_menu:ContextMenu = new ContextMenu();
+				my_menu.hideBuiltInItems();
+				
+				var my_notice = new ContextMenuItem("Republic of Code");
+				var my_email = new ContextMenuItem("blue_chi@roc.com");
+				var my_copyright = new ContextMenuItem("Copyright - 2009");
+				
+				my_copyright.enabled = false;
+				my_copyright.separatorBefore = true;
+				
+				function openLink(e:ContextMenuEvent):void{
+					navigateToURL(new URLRequest("http://www.republicofcode.com"));
+				}
+				my_notice.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, openLink);
+				
+				my_menu.customItems.push(my_notice, my_email, my_copyright);
+				
+				contextMenu = my_menu; 
+			*/
+					
+			}
+			
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * Multiple take  
+			 * Started Date:18 Feb 2013
+			 * Last Updated Date: 18 Feb 2013
+			 */
+			private function showAudioList(e:ModelEvent):void {
+				for (var i:int = 0; i < e.data.audios.length; i++ ) {
+					var item:listItem = new listItem();
+					item.y = i * 24;
+					item.mouseChildre = false;
+					item.buttonMode = true;
+					var k:int = i + 1;
+					item.text_txt.text = "Take " + k +".mp3";
+					item.addEventListener(MouseEvent.CLICK, itemClicked);
+					_audio_Take.myData.addItem("Take " + k);
+				}
+				
+				_audio_Take.x = 300;
+				_audio_Take.y = 300;
+				this.addElement(_audio_Take);
+				
+			}
+			
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * Multiple take  
+			 * Started Date:18 Feb 2013
+			 * Last Updated Date: 18 Feb 2013
+			 */
+			private function itemClicked(e:MouseEvent):void {
+				var data:Object = new Object();
+				data["audio"] = e.currentTarget.audio
+				ModelLocator5.getInstance().dispatchEvent(new ModelEvent(ModelEvent.AUDIO_LIST_SELECTED, data));
+			}
+			
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * Chapters break and node implementation for Editor module. 
+			 * Started Date:18 Feb 2013
+			 * Last Updated Date: 18 Feb 2013
+			 */
+			private function reFormateTextFlow(chtName:String):void
+			{	
+				var tempxml:XML = <node></node>;
+				tempxml.@label='Chapter'+importedChapteriteration+chtName;
+				leafXML.appendChild(tempxml);
+				
+				var leafArray:Array = textEditor.editor.textFlow.mxmlChildren;
+				var count:int = 0;
+				var balaaryList:XMLList = leafXML.node;
+				leafXML.node[balaaryList.length()-1].@id = "CH"+importedChapteriteration;
+				var tempvec:Vector.<Point> = new Vector.<Point>();
+				for (iii; iii < leafArray.length; iii++)
+				{
+					var strData:String = ParagraphElement(leafArray[iii]).getText().toString();
+					if(strData.split("\r\n").join("").length>0 && strData.split(" ").join("").length>0 && strData.split("\t").join("").length>0 ){
+						
+						leafXML.node[balaaryList.length()-1].appendChild(new XMLList("<node></node>"));
+						leafXML.node[balaaryList.length()-1].node[count].@label = strData.substr(0, 32);
+						leafXML.node[balaaryList.length()-1].node[count].@id = iii;
+						count++;
+						var strt1:int = ParagraphElement(leafArray[iii]).getFirstLeaf().getParagraph().parentRelativeStart;
+						var end1:int = ParagraphElement(leafArray[iii]).getFirstLeaf().getParagraph().parentRelativeEnd;
+						tempvec.push(new Point(strt1,end1));
+						
+					}else{
+						
+					}
+				}
+				textEditorIDS.push(tempvec);
+				myTree.dataProvider = leafXML;
+				this.validateNow();
+				myTree.expandChildrenOf(leafXML,true);
+				mainTextFlow =  textEditor.editor.textFlow;
+				selectedParagraphColor(mainTextFlow);
+				importedChapteriteration++;
+				
+				TextAreaLineNumbersSkin.me.updateMyNumbers();
+			}
+			
+			public static function findParaLine(nm:int):int{
+				var count:int = -1;
+				for(var i:int = 0; i<textEditorIDS.length; i++){
+					for(var k:int = 0; k<textEditorIDS[i].length; k++){
+						if(textEditorIDS[i][k].x == nm){
+							count = k;
+							break;
+						}
+					}
+				}
+				return count;
+			}
+			
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * Chapters break and node implementation for Editor module. 
+			 * Started Date:12 Dec 2012
+			 * Last Updated Date: 12 Dec 2012
+			 */
+			private function stretchHandler():void{
+				textEditor.editor.editable=false;
+				stage.scaleMode = StageScaleMode.NO_SCALE;
+				SpellUI.spellingConfigUrl = "asset/xmls/AdobeSpellingConfig.xml";
+				SpellUI.enableSpelling(textEditor.editor, "en_US");
+			}
+			
+			//bala for scroling
+			/* public function set verticalScrollPosition(value:Number):void
+			{
+			scrollV = Math.min(Math.max(0, int(value)), maxScrollV);
+			} */
+			
+			
+			//usefull
+			//(myTextArea.textDisplay as StyleableTextField).htmlText = text;
+			
+			protected function menuItemClickHandler(event:MenuEvent):void
+			{
+				trace("menuItemClickHandler")
+				switch (event.label) {
+					case "Create From Text" :
+						loadText();
+						break;
+					case "Undo" :
+						doUndo();
+						break;
+					case "Redo" :
+						doRedo();
+						break;
+					case "Cut" :
+						doCut();
+						break;
+					case "Copy" :
+						doCopy();
+						break;
+					case "Paste":
+						doPaste();
+						break;
+					case "Find/Replace":
+						findReplace();
+						break;
+					case "Find Next":
+						findNextInTextArea();
+						break;
+					case "Play":
+						soundEditor.onPlayPauseClick();
+						break;
+					case "Stop":
+						soundEditor.stopPlayBack();
+						break;
+					case "Pause":
+						soundEditor.onPlayPauseClick();
+						break;
+					case "Crop Audio":
+						soundEditor.cutAnwantedSound();
+						break;
+					case "Record":
+						soundEditor.onRecordPauseToggle();
+						break;
+					case "Import Audio":
+						//soundEditor.selectFileHandler();
+						break;
+					case "Export Audio":
+						soundEditor.saveAudioFile();
+						break;
+					case "Save As": 	//Added by ..CSK@rapidsoft..on 17 Dec..For saving different file formet we have to modify "Save as Type"	button...
+						doSaveAs();
+						break;
+					case "Open..":
+						openTextFlow();
+						break;
+				}
+			}
+			
+			private function removeTabsAndNewLines($str:String):String
+			{
+				var rex:RegExp = /(\t|\n|\r)/gi;
+				$str = $str.replace(rex,'');
+				return $str;
+			}
+			
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * for saving editor text in all format. 
+			 * Started Date:15 Dec 2012
+			 * Last Updated Date: 20 feb 2013
+			 */  
+			private function doSaveAs():void
+			{
+				XML.ignoreWhitespace = true;
+				textEditor.editor.textFlow.whiteSpaceCollapse = WhiteSpaceCollapse.COLLAPSE;
+				myXMLToSave = TextConverter.export(textEditor.editor.textFlow,TextConverter.TEXT_LAYOUT_FORMAT,ConversionType.XML_TYPE) as XML;
+				var str:String = removeTabsAndNewLines(myXMLToSave.toString())
+				myXMLToSave = new XML(str);
+				fileReference = new FileReference();
+				userRequest.addEventListener(ResultEvent.RESULT,callMe);
+				fileReference.save(myXMLToSave, ".tfl");	
+			}
+			
+			
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 *  for TextFlow tfl 
+			 * Started Date:12 Feb 2013
+			 * Last Updated Date: 13 Feb 2013
+			 */
+			private function openTextFlow():void{
+				LoadLocalTXT.FFilter = new FileFilter("Text Flow Files (*.xml,*.tfl)", "*.xml;*.tfl");
+				var llt:LoadLocalTXT = new LoadLocalTXT();
+				llt.addEventListener("Data_Loaded",openedTextFlowXML);
+				LoadLocalTXT.FFilter = null;
+				
+			}
+			
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * for TextFlow tfl that save all required information in side that.
+			 * Started Date:12 Feb 2013
+			 * Last Updated Date: 13 Feb 2013
+			 */
+			private function openedTextFlowXML(e:Event):void{
+				XML.ignoreWhitespace = true;
+				var fileContentText:String = e.target.data;
+				fileContentText = removeTabsAndNewLines(fileContentText)
+				textEditor.editor.textFlow = TextFlowUtil.importFromString(fileContentText,WhiteSpaceCollapse.COLLAPSE);
+				
+				var leafArray:Array = textEditor.editor.textFlow.mxmlChildren;
+				for (var i:int=0; i < leafArray.length; i++)
+				{
+					var strData:String = ParagraphElement(leafArray[i]).getText().toString();
+					if(strData.split("\r\n").join("").length>0 && strData.split(" ").join("").length>0 && strData.split("\t").join("").length>0 ){
+					}
+				}
+				
+				//reFormateTextFlow("ok"); // Comminted by CSK on 21 Feb..
+				reFormateTextFlow("");
+			}
+			
+			
+			private function callMe(evt:ResultEvent):void
+			{
+				//		Alert.show("djfsdfjsdfsdjsdjfsdjfdsfj");
+			}
+			
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * Find and replace funcionality for TextEditor, Popup position. 
+			 * Started Date:26 Dec 2012
+			 * Last Updated Date: 26 Feb 2012
+			 */
+			private function findReplace():void
+			{
+				var _findAndReplace:FindAndReplace = new FindAndReplace();
+				_findAndReplace.x = 900;
+				_findAndReplace.y = 20;
+				this.addElement(_findAndReplace);
+			}
+			
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * Find and replace funcionality for TextEditor, Popup position For implementing "Find Next" button functionality.
+			 * Started Date:.20 Dec 2012...
+			 * Last Updated Date: 26 Dec 2012
+			 */
+			private function findNextInTextArea():void
+			{
+				
+				var anchorPos:int = textEditor.editor.selectionAnchorPosition;
+				var activePos:int = textEditor.editor.selectionActivePosition;
+				
+				textEditor.editor.selectRange(anchorPos, activePos);
+				var search_Str : String = textEditor.editor.text.substring(anchorPos, activePos);
+				
+				var truncatedText : String;
+				truncatedText = textEditor.editor.text.substring(machCount);
+				var search_result:int = truncatedText.search(search_Str);
+				textEditor. editor.setFocus();
+				
+				if(search_result != -1){
+					textEditor.editor.selectRange(machCount+search_result,machCount+search_result+search_Str.length);
+					machCount = machCount+search_result+search_Str.length;
+				} else {
+					Alert.show('no more results');
+					machCount=0;
+				}
+			} 
+			
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * For DoRedo functionality in TextEditor.
+			 */
+			private function doRedo():void {
+				textEditor.editor.textFlow.interactionManager = editManager;
+				undoManager.redo();
+				//textChange();
+			}
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * For undo functionality in TextEditor.
+			 */
+			private function doUndo():void {
+				textEditor.editor.textFlow.interactionManager = editManager;
+				undoManager.undo();
+				//textChange();
+			}
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * For cutting selected text from TextEditor.
+			 */
+			private function doCut():void {
+				var selectedText:String = textEditor.editor.text.substring(textEditor.editor.selectionActivePosition, textEditor.editor.selectionAnchorPosition);
+				System.setClipboard(selectedText);
+				EditManager(textEditor.editor.textFlow.interactionManager).deleteText();
+				//insertText("");
+				//textChange();
+			}
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * For copying selected text from TextEditor.
+			 */
+			private function doCopy():void {
+				var selectedText:String = textEditor.editor.text.substring(textEditor.editor.selectionActivePosition, textEditor.editor.selectionAnchorPosition);
+				System.setClipboard(selectedText);
+			}
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * For paste selected text that comes from TextEditor.
+			 */
+			private function doPaste():void{
+				var str2:String=ExternalInterface.call("PasteFromClipboard");
+				if(str2!=null)
+				{
+					insertText(str2);
+				}	
+			}
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * For adding new text in TextEditor.
+			 */
+			private function insertText(str:String):void {
+				var substrPositions:int = textEditor.editor.selectionActivePosition - textEditor.editor.selectionAnchorPosition;
+				var oldSel1:int = (substrPositions>0)?(textEditor.editor.selectionAnchorPosition):(textEditor.editor.selectionActivePosition);
+				var oldSel2:int = (substrPositions<0)?(textEditor.editor.selectionAnchorPosition):(textEditor.editor.selectionActivePosition);
+				var preText:String = textEditor.editor.text.substring(0, oldSel1);
+				var postText:String = textEditor.editor.text.substring(oldSel2);
+				var newSelectRange:int = preText.length + str.length;
+				var newText:String = preText + str + postText;
+				
+				var operation:InsertOperation = new InsertOperation(textEditor.editor.text, newText, textEditor.editor, textEditor.editor.selectionActivePosition, textEditor.editor.selectionAnchorPosition, newSelectRange);
+				undoManager.pushUndo(operation);
+				
+				textEditor.editor.text = newText;
+				textEditor.editor.selectRange(newSelectRange, newSelectRange);
+				//textChange();
+			}
+			
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * Controlling copy and paste functionality in one function.
+			 */
+			
+			private function textChange():void{
+				canUndo = undoManager.canUndo();
+				canRedo = undoManager.canRedo();
+				focusManager.setFocus(textEditor.editor);
+			}
+			
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * Function will be called when new text file is importing 1st time.
+			 */
+			private function loadText():void
+			{
+				ModelLocator5.getInstance().addEventListener(ModelEvent.UPDATE,loadComplete);
+				_controller.load();
+			}
+			
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * Function will for seperating chapter as @@@ abrivation as client updated this. We are adding _ after each chapter brake.
+			 */
+			private function loadComplete(event:ModelEvent):void
+			{
+				var ary:Array = String(event.target.text).split("@@@");
+				for (var i:int=0; i < ary.length; i++)
+				{
+					var tempAry:Array = ary[i].split("_");
+					if(tempAry.length>1){
+						textEditor.editor.text += tempAry[1];
+						reFormateTextFlow(tempAry[0]);
+					}else{
+						textEditor.editor.text += tempAry[0];
+						//reFormateTextFlow("ok"); // Commented by CSK... 21 Feb 2013
+						reFormateTextFlow(""); 
+					}
+					
+				}
+				
+				textEditor.editor.textFlow.interactionManager = editManager;
+				textEditor.editor.textFlow.whiteSpaceCollapse = WhiteSpaceCollapse.COLLAPSE;
+				myXMLToSave = TextFlowUtil.export(textEditor.editor.textFlow); 	
+			}
+			
+			private function soundEditorErrorHandler(evt:SoundEditorEvent):void
+			{
+				Alert.show(evt.data,"Sound Editor Alert");
+			}
+			
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * Providing ID for each paragraph in side the text Editor.
+			 */
+			private function handleClick(event:ListEvent):void 
+			{
+				var id:Number = Number(event.currentTarget.selectedItem.@id)
+				if(!isNaN(id))
+				{
+					var leafArray:Array = textEditor.editor.textFlow.mxmlChildren;
+					var strt1:int = ParagraphElement(leafArray[id]).getFirstLeaf().getParagraph().parentRelativeStart;
+					var end1:int = ParagraphElement(leafArray[id]).getFirstLeaf().getParagraph().parentRelativeEnd
+					selectSpan(strt1,end1);
+				}else{
+					var idStr:String = String(event.currentTarget.selectedItem.@id);
+				}
+			}
+			
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * For FOCUSING/COLOR on text that is clicked by user.
+			 */
+			private function selectSpan(i1:int, i2:int):void
+			{
+				textEditor.editor.textFlow.interactionManager.setFocus();
+				textEditor.editor.selectRange(i1, i2);
+				selectedParagraphColor(textEditor.editor.textFlow);
+			}
+			
+			/**
+			 * ...
+			 * @author Rapidsoftsys
+			 * For FOCUSING/COLOR on text that is clicked by user.
+			 */
+			private function selectedParagraphColor(textFlow:TextFlow):void
+			{
+				var fSelFmt:ISelectionManager = textFlow.interactionManager;
+				fSelFmt.focusedSelectionFormat = new SelectionFormat(0x53BAFF, 1, BlendMode.NORMAL);
+				textFlow.interactionManager = fSelFmt;
+			}
+			
+			//Added by CSK@RapidSoft..on 27 Dec..
+			private function showIndex(event:MouseEvent):void
+			{
+				var activePos:int = textEditor.editor.selectionActivePosition;
+			}
+			
+			protected function mBar_menuShowHandler(evt:MenuEvent):void {
+				evt.menu.variableRowHeight = true;
+				evt.menu.invalidateSize();
+				
+			}
+			private function audioButtonRollOver(evt:MouseEvent):void
+			{
+				var s:String = String(evt.currentTarget.myname);
+				myTip = ToolTipManager.createToolTip(s,evt.target.x+270,evt.target.y+120) as ToolTip;
+				
+				
+			}
+			private function destroyBigTip(evt:MouseEvent):void {
+				ToolTipManager.destroyToolTip(myTip);
+				myTip=null;
+			}
+			
+			public function changeEvt(event:Event):void {
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<fx:XML id="nodes" source="asset/xmls/menu_data.xml" />
+		<s:HTTPService id="userRequest" url="http://localhost/tantor-audio/bin-debug/save_php/create_pdf.php" useProxy="false" method="POST">
+			<s:request xmlns="">
+				<!--<username>{textEditor.editorTxt.htmlText}</username>-->
+			</s:request>
+		</s:HTTPService>
+		
+	</fx:Declarations>
+	
+	<asset:index x="-83" y="73"/>
+	<s:Group width="100%" height="108">
+		<!-- Draw rectangle that is filled with a LinearGradient. -->
+		
+		<s:Rect height="79" width="100%" >                              
+			<s:stroke>
+				<s:SolidColorStroke color="0x000000" weight="2"/>
+			</s:stroke>
+			<s:fill>
+				<s:LinearGradient>
+					<s:GradientEntry color="0x0B293C" ratio="1" alpha="1"/>
+					<s:GradientEntry color="0x0B293C" ratio="1" alpha="1"/>
+				</s:LinearGradient>
+			</s:fill>
+		</s:Rect>
+		<asset:logo_tantor y="-103" width="378" height="275" horizontalCenter="0"/>
+	</s:Group>
+	
+	<mx:MenuBar x="0" y="81" width="100%" height="50" maxHeight="50" color="#FCFCFF"  invalid="true" kerning="true"  
+				dataProvider="{menuBarCollection}" fontFamily="Arial" fontSize="13"
+				itemClick="menuItemClickHandler(event)" 
+				labelField="@label" rollOverColor="#0BB8F8" selectionColor="#0CA5DE"
+				showInAutomationHierarchy="false"  menuShow="mBar_menuShowHandler(event);"/> 
+	
+	<s:SpriteVisualElement id="sp" y="100" left="283" width="100%" height="210"/>
+	
+	<mx:Tree id="myTree" x="9" y="323" width="266" height="100%" chromeColor="#0CA5DE"
+			 color="#050505" focusColor="#0CA5DE" labelField="@label" rollOverColor="#0AB2F0"
+			 selectionColor="#0CA5DE" showRoot="false"/>
+	
+	<components:TextEditor id="textEditor" x="282" y="323" height="100%" chromeColor="#098AC0"
+						   focusColor="#0B96C9" rollOverColor="#0DAAE4"/>
+	
+	
+</s:Application>

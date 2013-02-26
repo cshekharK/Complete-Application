@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   width="308" height="240" close="close()" creationComplete="init(event)"
+			   title="Audio Takes">    
+	
+	<fx:Script>
+		<![CDATA[
+			import com.application.view.Main;
+			
+			import mx.collections.ArrayList;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.events.ItemClickEvent;
+			import mx.managers.PopUpManager;
+			
+			public var myData:ArrayList = new ArrayList();
+			
+			private function init(event:FlexEvent):void {
+				// XXX in the real app data is updated from server
+			/* 	myData.removeAll();
+				for (var i:uint = 1; i <= 10; i++)
+					myData.addItem('Item #' + i); */
+			}
+			
+			public function close(event:TimerEvent=null):void {
+				PopUpManager.removePopUp(this);
+			}
+			
+			private function handleClick(event:MouseEvent):void {
+				var str:String = myList.selectedItem as String;
+				if (!str)
+					return;
+				
+				if (myBox.selected) {
+					/* Alert.show(
+						'Select ' + str + '?', 
+						null, 
+						mx.controls.Alert.YES | mx.controls.Alert.NO,
+						null,
+						handleConfirm,
+						null,
+						mx.controls.Alert.NO
+					); */
+					PopUpManager.removePopUp(this);
+					
+				} else {
+					sendEvent();
+				}
+			}
+			
+			private function handleConfirm(event:CloseEvent):void {
+				if (event.detail == mx.controls.Alert.YES){
+					sendEvent();
+				}
+	
+			}
+			
+			private function sendEvent():void {
+				close();
+				PopUpManager.removePopUp(this);
+				// XXX in the real app dispatchEvent() is called
+				
+			}
+		]]>
+	</fx:Script>
+	
+	<s:VGroup paddingLeft="20" paddingTop="20" 
+			  paddingRight="20" paddingBottom="20" gap="20" 
+			  width="100%" height="100%">
+		<s:List id="myList" dataProvider="{myData}" 
+				click="handleClick(event)"
+				width="100%" height="100%" fontSize="16" />
+		<s:CheckBox id="myBox" label="Confirm" />
+	</s:VGroup>
+</s:TitleWindow>

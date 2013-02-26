@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" width="400" height="242" title="Add Note" close="closeDialog();" >
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			import mx.collections.ArrayList;
+			import flash.events.Event;
+			
+			[Event(name="OK_btnClick", type="flash.events.Event")]
+			[Bindable]
+			public var myArray:ArrayList;
+			
+			
+			public function closeDialog():void {
+				PopUpManager.removePopUp(this);
+			}
+			
+			public function addNoteAndClose():void{
+				
+				//this.parentApplication.textEditor.editor.text=this.parentApplication.textEditor.editor.text.replace(ti1.text, ti2.text);
+				PopUpManager.removePopUp(this);
+			}
+			
+			protected function button1_clickHandler(event:MouseEvent):void
+			{
+				
+				dispatchEvent(new Event("OK_btnClick"));
+				PopUpManager.removePopUp(this);
+				
+			}
+			
+		]]>
+	</fx:Script>
+	<mx:TextInput id="ti1" x="10" y="10" width="378" height="154" color="#020202"/>
+	<s:Button x="247" y="179" label="Ok" click="button1_clickHandler(event)"/>
+	<s:Button x="325" y="179" label="Cancel" click="closeDialog();"/>
+</s:TitleWindow>

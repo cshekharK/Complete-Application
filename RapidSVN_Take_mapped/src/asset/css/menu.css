@@ -1,0 +1,65 @@
+
+@namespace s "library://ns.adobe.com/flex/spark";
+@namespace mx "library://ns.adobe.com/flex/mx";
+
+mx|MenuBar
+{
+	backgroundSkin: Embed(skinClass="MenuBar_backgroundSkin");
+	itemSkin: Embed(skinClass="MenuBar_itemSkin");
+	
+}
+mx|List
+{
+	borderSkin: Embed(skinClass="List_borderSkin");
+}
+
+
+mx|Tree
+{
+	borderSkin: Embed(skinClass="Tree_borderSkin");
+	defaultLeafIcon: Embed(skinClass="Tree_defaultLeafIcon");
+	disclosureClosedIcon: Embed(skinClass="Tree_disclosureClosedIcon");
+	disclosureOpenIcon: Embed(skinClass="Tree_disclosureOpenIcon");
+	folderClosedIcon: Embed(skinClass="Tree_folderClosedIcon");
+	folderOpenIcon: Embed(skinClass="Tree_folderOpenIcon");
+}
+global
+{
+	selection-color: #0CA5DE;
+	focus-color: #0CA5DE;
+	roll-over-color: #0AB9FA;
+	chrome-color: #05A1F2;
+	color: #020202;
+	symbol-color: #FCF7F7;
+}
+.tooltip
+{
+	borderColor:#FF7A9B;
+	color:#ffffff;
+	font-size:10;   
+	border-alpha:0.5;
+}
+
+mx|Alert{
+	borderColor: red;
+	backgroundColor: #32ACF0;
+	dropShadowVisible: true;
+	chromeColor: #32ACF0;
+	titleStyleName: alertTitle;
+	messageStyleName: alertMessage;
+	buttonStyleName: alertButton;
+}
+	.alertTitle{
+		fontSize: 15;
+		fontWeight: bold;
+		color: white;
+	}
+	.alertMessage {
+		
+		color: white;
+	}
+	.alertButton {
+		color: white;
+	}
+
+	
