@@ -112,7 +112,6 @@
 			 * ...
 			 * @author Rapidsoftsys
 			 * Starting applciation from here.
-			 * Started Date:11 August 2012
 			 * Last Updated Date: 27 Dec 2012
 			 * 
 			 */
@@ -184,8 +183,7 @@
 			/**
 			 * ...
 			 * @author Rapidsoftsys
-			 * Multiple take  
-			 * Started Date:18 Feb 2013
+			 * Multiple take
 			 * Last Updated Date: 18 Feb 2013
 			 */
 			private function showAudioList(e:ModelEvent):void {
@@ -210,7 +208,6 @@
 			 * ...
 			 * @author Rapidsoftsys
 			 * Multiple take  
-			 * Started Date:18 Feb 2013
 			 * Last Updated Date: 18 Feb 2013
 			 */
 			private function itemClicked(e:MouseEvent):void {
@@ -223,7 +220,6 @@
 			 * ...
 			 * @author Rapidsoftsys
 			 * Chapters break and node implementation for Editor module. 
-			 * Started Date:18 Feb 2013
 			 * Last Updated Date: 18 Feb 2013
 			 */
 			private function reFormateTextFlow(chtName:String):void
@@ -282,7 +278,6 @@
 			 * ...
 			 * @author Rapidsoftsys
 			 * Chapters break and node implementation for Editor module. 
-			 * Started Date:12 Dec 2012
 			 * Last Updated Date: 12 Dec 2012
 			 */
 			private function stretchHandler():void{
@@ -371,7 +366,6 @@
 			 * ...
 			 * @author Rapidsoftsys
 			 * for saving editor text in all format. 
-			 * Started Date:15 Dec 2012
 			 * Last Updated Date: 20 feb 2013
 			 */  
 			private function doSaveAs():void
@@ -391,7 +385,6 @@
 			 * ...
 			 * @author Rapidsoftsys
 			 *  for TextFlow tfl 
-			 * Started Date:12 Feb 2013
 			 * Last Updated Date: 13 Feb 2013
 			 */
 			private function openTextFlow():void{
@@ -406,7 +399,6 @@
 			 * ...
 			 * @author Rapidsoftsys
 			 * for TextFlow tfl that save all required information in side that.
-			 * Started Date:12 Feb 2013
 			 * Last Updated Date: 13 Feb 2013
 			 */
 			private function openedTextFlowXML(e:Event):void{
@@ -437,7 +429,6 @@
 			 * ...
 			 * @author Rapidsoftsys
 			 * Find and replace funcionality for TextEditor, Popup position. 
-			 * Started Date:26 Dec 2012
 			 * Last Updated Date: 26 Feb 2012
 			 */
 			private function findReplace():void
@@ -452,7 +443,6 @@
 			 * ...
 			 * @author Rapidsoftsys
 			 * Find and replace funcionality for TextEditor, Popup position For implementing "Find Next" button functionality.
-			 * Started Date:.20 Dec 2012...
 			 * Last Updated Date: 26 Dec 2012
 			 */
 			private function findNextInTextArea():void
